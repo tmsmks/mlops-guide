@@ -2,3 +2,5 @@ tensorflow==2.20.0
 matplotlib==3.10.3
 pyyaml==6.0.2
 dvc[gs]==3.60.1
+numpy>=1.26.0
+scikit-learn>=1.0.0
