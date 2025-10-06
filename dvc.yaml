@@ -2,30 +2,28 @@ stages:
   prepare:
     cmd: python3.12 src/prepare.py data/raw data/prepared
     deps:
+    - data/raw
     - src/prepare.py
     - src/utils/seed.py
-    - data/raw
     params:
     - prepare
     outs:
     - data/prepared
-
   train:
     cmd: python3.12 src/train.py data/prepared model
     deps:
+    - data/prepared
     - src/train.py
     - src/utils/seed.py
-    - data/prepared
     params:
     - train
     outs:
     - model
-
   evaluate:
     cmd: python3.12 src/evaluate.py model data/prepared
     deps:
-    - src/evaluate.py
     - model
+    - src/evaluate.py
     metrics:
     - evaluation/metrics.json
     plots:
