@@ -1,0 +1,59 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: PYTHONPATH=. python3 src/prepare.py data/raw data/prepared
+    deps:
+    - path: src/prepare.py
+      hash: md5
+      md5: 88a8536f4e97c22e682273228f0161c1
+      size: 3162
+    - path: src/utils/seed.py
+      hash: md5
+      md5: a3d7401c8f81fd3772bfb585096201ff
+      size: 201
+    params:
+      params.yaml:
+        prepare:
+          seed: 77
+          split: 0.2
+          image_size:
+          - 32
+          - 32
+          grayscale: true
+    outs:
+    - path: data/prepared
+      hash: md5
+      md5: 2d21d5bc7f01e4c4fa0b8f6bdee65734.dir
+      size: 246240833
+      nfiles: 6
+  train:
+    cmd: PYTHONPATH=. python3 src/train.py data/prepared model
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: 2d21d5bc7f01e4c4fa0b8f6bdee65734.dir
+      size: 246240833
+      nfiles: 6
+    - path: src/train.py
+      hash: md5
+      md5: 7cca3cfd1ff68793aaa8dab7bb051749
+      size: 4209
+    - path: src/utils/seed.py
+      hash: md5
+      md5: a3d7401c8f81fd3772bfb585096201ff
+      size: 201
+    params:
+      params.yaml:
+        train:
+          seed: 77
+          lr: 0.0001
+          epochs: 10
+          conv_size: 32
+          dense_size: 64
+          output_classes: 11
+    outs:
+    - path: model
+      hash: md5
+      md5: b5844eb13de75354407b61c76ddcbf7d.dir
+      size: 1613265
+      nfiles: 3
