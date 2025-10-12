@@ -11,7 +11,6 @@ from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from src.utils.seed import set_seed
 import mlflow
 import mlflow.tensorflow
-from mlflow_config import setup_mlflow_tracking, log_model_to_registry
 
 
 def load_data(data_dir):
@@ -45,7 +44,8 @@ def create_model(params, input_shape, num_classes):
 def train_model(model, x_train, y_train, x_val, y_val, params):
     """Train the model with MLflow tracking."""
     # Setup MLflow tracking
-    setup_mlflow_tracking()
+    mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI', 'gs://mlops-project-storage/mlflow'))
+    mlflow.set_experiment(os.getenv('MLFLOW_EXPERIMENT_NAME', 'mlops-experiment'))
     
     with mlflow.start_run():
         # Log parameters

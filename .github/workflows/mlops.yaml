@@ -55,12 +55,6 @@ jobs:
           MLFLOW_TRACKING_URI: gs://mlops-project-storage/mlflow
           MLFLOW_EXPERIMENT_NAME: mlops-experiment
       
-      - name: Run model monitoring
-        run: python src/monitor.py
-        env:
-          MLFLOW_TRACKING_URI: gs://mlops-project-storage/mlflow
-          MLFLOW_EXPERIMENT_NAME: mlops-experiment
-      
       - name: Build Docker image
         run: |
           docker build -t gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/mlops-service:${{ github.sha }} .
@@ -78,10 +72,8 @@ jobs:
             --max-instances 10 \
             --set-env-vars MLFLOW_TRACKING_URI=gs://mlops-project-storage/mlflow,MLFLOW_EXPERIMENT_NAME=mlops-experiment
       
-      - name: Create CML report
+      - name: Create report
         if: always()
-        env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "# Model Performance Report" > report.md
           echo "" >> report.md
@@ -90,14 +82,6 @@ jobs:
             echo "## Model Metrics" >> report.md
             echo '```json' >> report.md
             cat evaluation/metrics.json >> report.md
-            echo '```' >> report.md
-            echo "" >> report.md
-          fi
-          
-          if [ -f "monitoring/report.json" ]; then
-            echo "## Monitoring Report" >> report.md
-            echo '```json' >> report.md
-            cat monitoring/report.json >> report.md
             echo '```' >> report.md
             echo "" >> report.md
           fi
@@ -111,5 +95,3 @@ jobs:
               fi
             done
           fi
-          
-          cml comment create report.md

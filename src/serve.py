@@ -7,9 +7,6 @@ import numpy as np
 import tensorflow as tf
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import mlflow
-import mlflow.tensorflow
-from mlflow_config import setup_mlflow_tracking
 
 app = FastAPI(title="MLOps Model Service", version="1.0.0")
 
@@ -25,35 +22,20 @@ class PredictionResponse(BaseModel):
     confidence: float
     class_name: str
 
-def load_model_from_registry():
-    """Load the latest model from MLflow registry"""
-    setup_mlflow_tracking()
-    
-    client = mlflow.tracking.MlflowClient()
-    
-    # Get the latest version of the model
-    latest_version = client.get_latest_versions("cifar10-cnn", stages=["None"])[0]
-    
-    # Load model
-    model_uri = f"models:/cifar10-cnn/{latest_version.version}"
-    model = mlflow.tensorflow.load_model(model_uri)
-    
-    return model
+def load_model():
+    """Load the model from local file"""
+    global model
+    model_path = "model/model.h5"
+    if os.path.exists(model_path):
+        model = tf.keras.models.load_model(model_path)
+        print("Model loaded successfully")
+    else:
+        print("Model file not found")
 
 @app.on_event("startup")
-async def load_model():
+async def load_model_on_startup():
     """Load model on startup"""
-    global model
-    try:
-        model = load_model_from_registry()
-        print("Model loaded successfully")
-    except Exception as e:
-        print(f"Error loading model: {e}")
-        # Fallback to local model if registry fails
-        model_path = "model/model.h5"
-        if os.path.exists(model_path):
-            model = tf.keras.models.load_model(model_path)
-            print("Loaded local model as fallback")
+    load_model()
 
 @app.get("/")
 async def root():
