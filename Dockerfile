@@ -19,7 +19,7 @@ COPY params.yaml .
 
 # Set environment variables
 ENV PYTHONPATH=/app
-ENV MLFLOW_TRACKING_URI=gs://mlops-project-storage/mlflow
+ENV MLFLOW_TRACKING_URI=file:./mlruns
 ENV MLFLOW_EXPERIMENT_NAME=mlops-experiment
 
 # Expose port

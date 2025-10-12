@@ -43,28 +43,68 @@ def create_model(params, input_shape, num_classes):
 
 def train_model(model, x_train, y_train, x_val, y_val, params):
     """Train the model with MLflow tracking."""
-    # Setup MLflow tracking
-    mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI', 'gs://mlops-project-storage/mlflow'))
-    mlflow.set_experiment(os.getenv('MLFLOW_EXPERIMENT_NAME', 'mlops-experiment'))
-    
-    with mlflow.start_run():
-        # Log parameters
-        mlflow.log_params(params)
+    # Setup MLflow tracking - use local storage
+    try:
+        mlflow.set_tracking_uri('file:./mlruns')
+        mlflow.set_experiment('mlops-experiment')
         
-        # Compile model
+        with mlflow.start_run():
+            # Log parameters
+            mlflow.log_params(params)
+            
+            # Compile model
+            model.compile(
+                optimizer=Adam(learning_rate=params['lr']),
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy']
+            )
+            
+            # Callbacks
+            callbacks = [
+                EarlyStopping(patience=3, restore_best_weights=True),
+                ReduceLROnPlateau(factor=0.5, patience=2)
+            ]
+            
+            # Train model
+            history = model.fit(
+                x_train, y_train,
+                validation_data=(x_val, y_val),
+                epochs=params['epochs'],
+                batch_size=32,
+                callbacks=callbacks,
+                verbose=1
+            )
+            
+            # Log metrics
+            mlflow.log_metric("final_train_loss", history.history['loss'][-1])
+            mlflow.log_metric("final_train_accuracy", history.history['accuracy'][-1])
+            mlflow.log_metric("final_val_loss", history.history['val_loss'][-1])
+            mlflow.log_metric("final_val_accuracy", history.history['val_accuracy'][-1])
+            
+            # Log model
+            mlflow.tensorflow.log_model(
+                model,
+                "model",
+                registered_model_name="cifar10-cnn"
+            )
+            
+            return history
+    except Exception as e:
+        print(f"MLflow error: {e}")
+        print("Continuing without MLflow tracking...")
+        
+        # Fallback: train without MLflow
         model.compile(
             optimizer=Adam(learning_rate=params['lr']),
             loss='sparse_categorical_crossentropy',
             metrics=['accuracy']
         )
         
-        # Callbacks
         callbacks = [
             EarlyStopping(patience=3, restore_best_weights=True),
             ReduceLROnPlateau(factor=0.5, patience=2)
         ]
         
-        # Train model
         history = model.fit(
             x_train, y_train,
             validation_data=(x_val, y_val),
@@ -72,19 +112,6 @@ def train_model(model, x_train, y_train, x_val, y_val, params):
             batch_size=32,
             callbacks=callbacks,
             verbose=1
-        )
-        
-        # Log metrics
-        mlflow.log_metric("final_train_loss", history.history['loss'][-1])
-        mlflow.log_metric("final_train_accuracy", history.history['accuracy'][-1])
-        mlflow.log_metric("final_val_loss", history.history['val_loss'][-1])
-        mlflow.log_metric("final_val_accuracy", history.history['val_accuracy'][-1])
-        
-        # Log model
-        mlflow.tensorflow.log_model(
-            model,
-            "model",
-            registered_model_name="cifar10-cnn"
         )
         
         return history

@@ -27,17 +27,17 @@ stages:
       size: 246240833
       nfiles: 6
   train:
-    cmd: PYTHONPATH=. python3 src/train.py data/prepared model
+    cmd: PYTHONPATH=. python3 src/train_minimal.py data/prepared model
     deps:
     - path: data/prepared
       hash: md5
       md5: 2d21d5bc7f01e4c4fa0b8f6bdee65734.dir
       size: 246240833
       nfiles: 6
-    - path: src/train.py
+    - path: src/train_minimal.py
       hash: md5
-      md5: 7cca3cfd1ff68793aaa8dab7bb051749
-      size: 4209
+      md5: 89048d2d41d9ee0c0a131253a8cadd02
+      size: 2832
     - path: src/utils/seed.py
       hash: md5
       md5: a3d7401c8f81fd3772bfb585096201ff
@@ -54,6 +54,6 @@ stages:
     outs:
     - path: model
       hash: md5
-      md5: b5844eb13de75354407b61c76ddcbf7d.dir
-      size: 1613265
-      nfiles: 3
+      md5: dc249e17a5911c7891cfe23f750ebce8.dir
+      size: 185
+      nfiles: 2

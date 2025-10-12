@@ -52,7 +52,7 @@ jobs:
       - name: Train model
         run: dvc repro --pull
         env:
-          MLFLOW_TRACKING_URI: gs://mlops-project-storage/mlflow
+          MLFLOW_TRACKING_URI: file:./mlruns
           MLFLOW_EXPERIMENT_NAME: mlops-experiment
       
       - name: Build Docker image
