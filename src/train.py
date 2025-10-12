@@ -9,6 +9,9 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropou
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from src.utils.seed import set_seed
+import mlflow
+import mlflow.tensorflow
+from mlflow_config import setup_mlflow_tracking, log_model_to_registry
 
 
 def load_data(data_dir):
@@ -40,31 +43,51 @@ def create_model(params, input_shape, num_classes):
 
 
 def train_model(model, x_train, y_train, x_val, y_val, params):
-    """Train the model."""
-    # Compile model
-    model.compile(
-        optimizer=Adam(learning_rate=params['lr']),
-        loss='sparse_categorical_crossentropy',
-        metrics=['accuracy']
-    )
+    """Train the model with MLflow tracking."""
+    # Setup MLflow tracking
+    setup_mlflow_tracking()
     
-    # Callbacks
-    callbacks = [
-        EarlyStopping(patience=3, restore_best_weights=True),
-        ReduceLROnPlateau(factor=0.5, patience=2)
-    ]
-    
-    # Train model
-    history = model.fit(
-        x_train, y_train,
-        validation_data=(x_val, y_val),
-        epochs=params['epochs'],
-        batch_size=32,
-        callbacks=callbacks,
-        verbose=1
-    )
-    
-    return history
+    with mlflow.start_run():
+        # Log parameters
+        mlflow.log_params(params)
+        
+        # Compile model
+        model.compile(
+            optimizer=Adam(learning_rate=params['lr']),
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        
+        # Callbacks
+        callbacks = [
+            EarlyStopping(patience=3, restore_best_weights=True),
+            ReduceLROnPlateau(factor=0.5, patience=2)
+        ]
+        
+        # Train model
+        history = model.fit(
+            x_train, y_train,
+            validation_data=(x_val, y_val),
+            epochs=params['epochs'],
+            batch_size=32,
+            callbacks=callbacks,
+            verbose=1
+        )
+        
+        # Log metrics
+        mlflow.log_metric("final_train_loss", history.history['loss'][-1])
+        mlflow.log_metric("final_train_accuracy", history.history['accuracy'][-1])
+        mlflow.log_metric("final_val_loss", history.history['val_loss'][-1])
+        mlflow.log_metric("final_val_accuracy", history.history['val_accuracy'][-1])
+        
+        # Log model
+        mlflow.tensorflow.log_model(
+            model,
+            "model",
+            registered_model_name="cifar10-cnn"
+        )
+        
+        return history
 
 
 def save_model(model, history, output_dir):

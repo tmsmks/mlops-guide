@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  mlops-service:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=gs://mlops-project-storage/mlflow
+      - MLFLOW_EXPERIMENT_NAME=mlops-experiment
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+    restart: unless-stopped
+
+  mlflow-ui:
+    image: python:3.12-slim
+    ports:
+      - "5000:5000"
+    command: >
+      sh -c "pip install mlflow[extras] && 
+             mlflow server --backend-store-uri gs://mlops-project-storage/mlflow --default-artifact-root gs://mlops-project-storage/mlflow --host 0.0.0.0 --port 5000"
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+    restart: unless-stopped

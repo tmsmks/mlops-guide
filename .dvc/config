@@ -1,0 +1,5 @@
+[core]
+    remote = storage
+['remote "storage"']
+    url = gs://mlops-project-storage
+    projectname = mlops-project-1760307466

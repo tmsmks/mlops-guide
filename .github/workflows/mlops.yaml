@@ -36,8 +36,44 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}'
       
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: 'latest'
+      
+      - name: Configure Google Cloud
+        run: |
+          gcloud auth configure-docker
+          gcloud config set project ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+      
       - name: Train model
         run: dvc repro --pull
+        env:
+          MLFLOW_TRACKING_URI: gs://mlops-project-storage/mlflow
+          MLFLOW_EXPERIMENT_NAME: mlops-experiment
+      
+      - name: Run model monitoring
+        run: python src/monitor.py
+        env:
+          MLFLOW_TRACKING_URI: gs://mlops-project-storage/mlflow
+          MLFLOW_EXPERIMENT_NAME: mlops-experiment
+      
+      - name: Build Docker image
+        run: |
+          docker build -t gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/mlops-service:${{ github.sha }} .
+          docker push gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/mlops-service:${{ github.sha }}
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy mlops-service \
+            --image gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/mlops-service:${{ github.sha }} \
+            --platform managed \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --memory 2Gi \
+            --cpu 2 \
+            --max-instances 10 \
+            --set-env-vars MLFLOW_TRACKING_URI=gs://mlops-project-storage/mlflow,MLFLOW_EXPERIMENT_NAME=mlops-experiment
       
       - name: Create CML report
         if: always()
@@ -51,6 +87,14 @@ jobs:
             echo "## Model Metrics" >> report.md
             echo '```json' >> report.md
             cat evaluation/metrics.json >> report.md
+            echo '```' >> report.md
+            echo "" >> report.md
+          fi
+          
+          if [ -f "monitoring/report.json" ]; then
+            echo "## Monitoring Report" >> report.md
+            echo '```json' >> report.md
+            cat monitoring/report.json >> report.md
             echo '```' >> report.md
             echo "" >> report.md
           fi
