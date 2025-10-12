@@ -25,12 +25,6 @@ jobs:
       - name: Install dependencies
         run: pip install --requirement requirements.txt
       
-      - name: Install CML
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl
-          curl -fsSL https://raw.githubusercontent.com/iterative/cml/master/install.sh | bash
-      
       - name: Login to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -40,6 +34,15 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
         with:
           version: 'latest'
+      
+      - name: Validate Google Cloud Configuration
+        run: |
+          if [ -z "${{ secrets.GOOGLE_CLOUD_PROJECT }}" ]; then
+            echo "❌ GOOGLE_CLOUD_PROJECT secret is not set"
+            echo "Please add GOOGLE_CLOUD_PROJECT secret in repository settings"
+            exit 1
+          fi
+          echo "✅ GOOGLE_CLOUD_PROJECT is configured"
       
       - name: Configure Google Cloud
         run: |

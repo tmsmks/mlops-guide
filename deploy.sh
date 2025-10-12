@@ -4,7 +4,7 @@
 set -e
 
 # Configuration
-PROJECT_ID="mlops-project-$(date +%s)"
+PROJECT_ID="machledata-474307"
 REGION="us-central1"
 SERVICE_NAME="mlops-model-service"
 IMAGE_NAME="gcr.io/$PROJECT_ID/$SERVICE_NAME"
